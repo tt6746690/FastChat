@@ -6,6 +6,45 @@ import argparse
 import pandas as pd
 
 
+
+def save_result_single(args):
+    import os, json
+
+    if args.input_file is None:
+        input_file = (
+            f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
+        )
+    else:
+        input_file = args.input_file
+
+    print(f"Input file: {input_file}")
+    df_all = pd.read_json(input_file, lines=True)
+    df = df_all[["model", "score", "turn"]]
+    df = df[df["score"] != -1]
+
+    if args.model_list is not None:
+        df = df[df["model"].isin(args.model_list)]
+
+    output = {}
+
+    for turn in list(df['turn'].unique()):
+        dft = df[df["turn"] == turn].groupby(["model", "turn"]).mean()
+        if len(dft) != 1:
+            raise ValueError("Should just show results for 1 model at a time.")
+        output[f'turn_{turn}_rating'] = dft.iloc[0]['score']
+        
+    dft = df[["model", "score"]].groupby(["model"]).mean()
+    if len(dft) != 1:
+        raise ValueError("Should just show results for 1 model at a time.")
+    output["average_rating"] = dft.iloc[0]['score']
+
+
+    save_path = os.path.join(os.path.dirname(args.input_file), 'metrics.json')
+    print(f'Save metrics to \n\t{save_path}')
+    with open(save_path, 'w') as f:
+        json.dump(output, f, indent=4)
+
+
 def display_result_single(args):
     if args.input_file is None:
         input_file = (
@@ -117,6 +156,12 @@ if __name__ == "__main__":
             "`single` runs single answer grading."
         ),
     )
+    parser.add_argument(
+        "--save-to-json",
+        default=False,
+        action="store_true",
+    )
+
     args = parser.parse_args()
 
     if args.mode == "single":
@@ -128,3 +173,9 @@ if __name__ == "__main__":
 
     print(f"Mode: {args.mode}")
     display_result_func(args)
+
+    if args.save_to_json:
+        if args.mode == "single":
+            save_result_single(args)
+        else:
+            raise NotImplementedError

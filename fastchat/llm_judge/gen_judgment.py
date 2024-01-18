@@ -207,11 +207,26 @@ if __name__ == "__main__":
     parser.add_argument(
         "--first-n", type=int, help="A debug option. Only run the first `n` judgments."
     )
+    parser.add_argument("--question-file", type=str, help="The question file.")
+    parser.add_argument("--answer-dir", type=str, help="The model answer dir.")
+    parser.add_argument("--ref-answer-dir", type=str, help="The reference answer dir.")
+    parser.add_argument("--output-file", type=str, help="The output file containing judgements.")
+
     args = parser.parse_args()
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
-    answer_dir = f"data/{args.bench_name}/model_answer"
-    ref_answer_dir = f"data/{args.bench_name}/reference_answer"
+    if args.question_file:
+        question_file = args.question_file
+    else:
+        question_file = f"data/{args.bench_name}/question.jsonl"
+    if args.answer_dir:
+        answer_dir = args.answer_dir
+    else:
+        answer_dir = f"data/{args.bench_name}/model_answer"
+    if args.ref_answer_dir:
+        ref_answer_dir = args.ref_answer_dir
+    else:
+        ref_answer_dir = f"data/{args.bench_name}/reference_answer"
+
 
     # Load questions
     questions = load_questions(question_file, None, None)
@@ -234,17 +249,23 @@ if __name__ == "__main__":
     if args.mode == "single":
         judges = make_judge_single(args.judge_model, judge_prompts)
         play_a_match_func = play_a_match_single
-        output_file = (
-            f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
-        )
+        if args.output_file:
+            output_file = args.output_file
+        else:
+            output_file = (
+                f"data/{args.bench_name}/model_judgment/{args.judge_model}_single.jsonl"
+            )
         make_match_func = make_match_single
         baseline_model = None
     else:
         judges = make_judge_pairwise(args.judge_model, judge_prompts)
         play_a_match_func = play_a_match_pair
-        output_file = (
-            f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"
-        )
+        if args.output_file:
+            output_file = args.output_file
+        else:
+            output_file = (
+                f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"
+            )
         if args.mode == "pairwise-all":
             make_match_func = make_match_all_pairs
             baseline_model = None
@@ -301,7 +322,7 @@ if __name__ == "__main__":
     # Show match stats and prompt enter to continue
     print("Stats:")
     print(json.dumps(match_stat, indent=4))
-    input("Press Enter to confirm...")
+    # input("Press Enter to confirm...")
 
     # Play matches
     if args.parallel == 1:

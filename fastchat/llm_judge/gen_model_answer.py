@@ -269,7 +269,8 @@ if __name__ == "__main__":
         default="main",
         help="The model revision to load.",
     )
-
+    parser.add_argument("--question-file", type=str, help="The question file.")
+    
     args = parser.parse_args()
 
     if args.num_gpus_total // args.num_gpus_per_model > 1:
@@ -277,7 +278,10 @@ if __name__ == "__main__":
 
         ray.init()
 
-    question_file = f"data/{args.bench_name}/question.jsonl"
+    if args.question_file:
+        question_file = args.question_file
+    else:
+        question_file = f"data/{args.bench_name}/question.jsonl"
     if args.answer_file:
         answer_file = args.answer_file
     else:
