@@ -67,6 +67,7 @@ OPENAI_MODEL_LIST = (
     "gpt-4-0314",
     "gpt-4-0613",
     "gpt-4-turbo",
+    "gpt-4-1106-preview",
 )
 
 

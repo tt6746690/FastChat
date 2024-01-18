@@ -404,7 +404,12 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 
+prompt_tokens = 0
+completion_tokens = 0
+num_api_calls = 0
+
 def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
+    global prompt_tokens, completion_tokens, num_api_calls
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
@@ -419,6 +424,20 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
+            ### wpq get an idea of cost
+            num_api_calls += 1
+            prompt_tokens += response["usage"]["prompt_tokens"]
+            completion_tokens += response["usage"]["completion_tokens"]
+            print()
+            print(f'Num API calls: {num_api_calls} Prompt Tokens: {prompt_tokens}, Completion Tokens: {completion_tokens}')
+            for k, input_cost, ouptut_cost in [
+                ('gpt-4-turbo', 0.01, 0.03),
+                ('gpt-4', 0.03, 0.06),
+                ('gpt-3.5-turbo-1106', 0.001, 0.002),
+            ]:
+                cost = prompt_tokens/1_000*input_cost + completion_tokens/1_000*ouptut_cost
+                print(f"Cost [{k}]: {cost:.3f} (per-example: {cost/num_api_calls:.4f})")
+            ### 
             output = response["choices"][0]["message"]["content"]
             break
         except openai.error.OpenAIError as e:
